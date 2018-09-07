@@ -1,0 +1,26 @@
+use clap::{App, Arg, SubCommand};
+
+pub fn get_app() -> App<'static, 'static> {
+    App::new("todo")
+        .version("0.1.0")
+        .author("Braedon Wooding <braedonww@gmail.com>")
+        .about("A todo manager written in Rust")
+        .subcommand(SubCommand::with_name("open")
+            .about("Open a todo list")
+            .arg(Arg::with_name("FILE")
+                .help("The file to open")
+                .default_value("list.todo")
+                .required(true)))
+        .subcommand(SubCommand::with_name("init")
+            .about("Create a new todo list")
+            .arg(Arg::with_name("FILE")
+                .help("The filename")
+                .default_value("list.todo")
+                .required(true)))
+        .subcommand(SubCommand::with_name("completions")
+            .about("Generates completion scripts for your shell")
+            .arg(Arg::with_name("SHELL")
+                .required(true)
+                .possible_values(&["bash", "fish", "zsh"])
+                .help("The shell to generate the script for")))
+}

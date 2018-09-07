@@ -1,0 +1,105 @@
+name = "todo"
+
+[[contents]]
+ticked_off = true
+title = "Support multiline items (for small screens)"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Add github support, to link them to an issue (in some regard)"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Add user preferences, to allow users to automatically save on exit and so on"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Make it more colourful"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Remove any needless dependencies"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Archive Operation"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Support links to items such as files or images"
+contents = []
+
+[[contents]]
+ticked_off = true
+title = "When changing the name we probably should also change the path to include the new name"
+
+[[contents.contents]]
+ticked_off = true
+title = "Currently we are handling this properly but idk if we want to"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "If the thing can't save, then make sure the user has correct directory"
+contents = []
+
+[[contents]]
+ticked_off = true
+title = "Move the new item to the bottom as a 'bottom buffer' (vim style)"
+contents = []
+
+[[contents]]
+ticked_off = true
+title = "When lists get really big they don't scroll properly"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Much stronger '*' (editing system)"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "When you have deleted a file really indicate you have (rather than just the measly '!')"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Support storing backups (that is to always manage the previous edition under `./backups/`)"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Give each item an ID as for if we need it in the future"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Better undo/redo system"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Support selecting a group of todo items and performing a task"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Better text display (underlining and so on)"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Support item links"
+contents = []
+
+[[contents]]
+ticked_off = false
+title = "Add 'hour' support (you can tag how many hours something will take and It'll collate the count)"
+contents = []
