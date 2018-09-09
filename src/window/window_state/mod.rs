@@ -13,8 +13,8 @@ use std::cell::RefCell;
 use errors::*;
 
 use todo_list;
-mod todo_window;
-pub use self::todo_window::*;
+mod helper;
+pub use self::helper::*;
 
 pub struct WindowState {
     pub changes: bool, // lines have changed
@@ -50,6 +50,7 @@ impl WindowState {
         Ok(list)
     }
 
+    // TODO: update this to use an index and a list
     pub fn switch_list(&mut self, list: todo_list::TodoList) {
         if let Some(pos) = self.loaded_lists.iter().position(|ref r| r.borrow_mut().path == list.path) {
             self.reset_cur();
@@ -93,6 +94,9 @@ impl WindowState {
     // by using an unsafe block and pointer dereferencing, please note
     // that by asking for a parent list you do not borrow that list
     // and merely maintain a reference to that list.
+    // NOTE: I feel like a recursive solution is the way to solve this
+    //       but I also feel like that'll be much slower and could cause problems
+    //       on large lists, time for benchmarking!!
     pub fn cur_parent_list<'a>(&self) -> &'a mut Vec<todo_list::TodoItem> {
         let mut it = &mut self.cur_loaded_list().contents as *mut Vec<todo_list::TodoItem>;
         unsafe {
@@ -117,8 +121,39 @@ impl WindowState {
         self.cur.borrow().len()
     }
 
-    pub fn move_cur_item(&self) {
-        
+    pub fn move_cur_down(&self, amount: usize) -> Result<()> {
+        let list_len = self.cur_parent_list().len();
+        if list_len > 0 {
+            let last = self.last_cur()?;
+            // handling overflow as well
+            if amount <= !0 && *last <= !0 - amount && *last < self.cur_parent_list().len() - 1 {
+                *last += amount;
+            } else {
+                *last = 0;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn move_cur_up(&self, amount: usize) -> Result<()> {
+        let list_len = self.cur_parent_list().len();
+        if list_len > 0 {
+            let last = self.last_cur()?;
+            // handling underflow
+            if *last >= amount {
+                *last -= amount;
+            } else  {
+                *last = list_len - 1;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn set_cur(&self, values: &[usize]) {
+        self.reset_cur();
+        for val in values {
+            self.push_cur(*val);
+        }
     }
 
     pub fn pop_cur(&self) -> Result<usize> {

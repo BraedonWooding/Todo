@@ -28,31 +28,12 @@ impl Window {
         let reader = Interface::new("todo")?;
         match event {
             Key::Down | Key::Char('j') => {
-                if cur_list.len() > 0 {
-                    let last = self.state.last_cur()?;
-                    // Handles overflow
-                    // WHY am I doing this?? Stupid me made some weird code
-                    // this really needs to be done better...  honestly
-                    // get a grip!!!
-                    if *last == !0 {
-                        *last = 0;
-                    } else {
-                        *last = (*last as u64 + 1).rem(cur_list.len() as u64) as usize;
-                    }
-                    self.dirty_window = true;
-                }
+                self.state.move_cur_down(1)?;
+                self.dirty_window = true;
             },
             Key::Up | Key::Char('k') => {
-                if cur_list.len() > 0 {
-                    let last = self.state.last_cur()?;
-                    if *last == !0 {
-                        *last = cur_list.len() - 1;
-                    } else {
-                        *last = ((*last as i64 - 1 + cur_list.len() as i64)
-                            % (cur_list.len() as i64)) as usize;
-                    }
-                    self.dirty_window = true;
-                }
+                self.state.move_cur_up(1)?;
+                self.dirty_window = true;
             },
             Key::Left | Key::Char('h') => {
                 if self.state.cur_depth() > 1 {
@@ -184,14 +165,6 @@ impl Window {
                         cur_list.swap(*last, *last - 1);
                         *last -= 1;
                     } else {
-                        // Query: Effectively this moves all the items down
-                        // could we maintain an offset into the list as to
-                        // make this significantly more efficient
-                        // I.e. O(n) => O(1), could also bubble swap
-                        // it all the way to the end, which arguably could
-                        // be more efficient???  In effect maybe list already
-                        // does this offset, else maybe we want to extend
-                        // with this offset??
                         let item = cur_list.remove(*last);
                         *last = cur_list.len();
                         cur_list.insert(*last, item);
