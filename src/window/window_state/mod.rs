@@ -104,6 +104,10 @@ impl WindowState {
         }
     }
 
+    pub fn cur_item<'a>(&self) -> Result<&'a mut todo_list::TodoItem> {
+        Ok(&mut self.cur_parent_list()[*self.last_cur()?])
+    }
+
     pub fn reset_cur(&self) {
         self.cur.borrow_mut().clear();
         self.cur.borrow_mut().push(RefCell::from(0));
@@ -111,6 +115,10 @@ impl WindowState {
 
     pub fn cur_depth(&self) -> usize {
         self.cur.borrow().len()
+    }
+
+    pub fn move_cur_item(&self) {
+        
     }
 
     pub fn pop_cur(&self) -> Result<usize> {

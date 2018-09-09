@@ -110,7 +110,7 @@ impl Window {
             self.view.flush()?;
 
             if report_err {
-                write!(self.view, "\n\r{red}Unrecognised Key{reset}\n\r",
+                write!(self.view, "\r\n{red}Unrecognised Key{reset}\r\n",
                     red = color::Fg(color::Red),
                     reset = style::Reset)?;
             }

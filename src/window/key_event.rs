@@ -24,10 +24,10 @@ use window::*;
 impl Window {
     pub fn handle_key_event(&mut self, event: Key) -> Result<bool> {
         let cur_list = self.state.cur_parent_list();
+        let cur_item = self.state.cur_item()?;
         let reader = Interface::new("todo")?;
         match event {
             Key::Down | Key::Char('j') => {
-                let cur_list = self.state.cur_parent_list();
                 if cur_list.len() > 0 {
                     let last = self.state.last_cur()?;
                     // Handles overflow
@@ -43,7 +43,6 @@ impl Window {
                 }
             },
             Key::Up | Key::Char('k') => {
-                let cur_list = self.state.cur_parent_list();
                 if cur_list.len() > 0 {
                     let last = self.state.last_cur()?;
                     if *last == !0 {
@@ -62,15 +61,12 @@ impl Window {
                 }
             },
             Key::Right | Key::Char('l') => {
-                let cur_list = self.state.cur_parent_list();
-                let cur_item = &cur_list[*self.state.last_cur()?];
                 if cur_item.contents.len() > 0 {
                     self.state.push_cur(0);
                     self.dirty_window = true;
                 }
             },
             Key::Char('\t') => {
-                let cur_item = &mut cur_list[*self.state.last_cur()?];
                 if let ReadResult::Input(new_title) = self.view.get_user_input("New Item: ", &reader)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     let i = cur_item.contents.len();
@@ -83,7 +79,6 @@ impl Window {
             Key::Char('E') => {
                 // edit from beginning
                 if cur_list.len() > 0 {
-                    let cur_item = &mut cur_list[*self.state.last_cur()?];
                     if let ReadResult::Input(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, Some(0), &reader)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
@@ -93,7 +88,6 @@ impl Window {
             Key::Char('e') => {
                 // edit from end
                 if cur_list.len() > 0 {
-                    let cur_item = &mut cur_list[*self.state.last_cur()?];
                     if let ReadResult::Input(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, None, &reader)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
@@ -103,7 +97,6 @@ impl Window {
             Key::Char('w') => {
                 // wipe line and edit
                 if cur_list.len() > 0 {
-                    let cur_item = &mut cur_list[*self.state.last_cur()?];
                     if let ReadResult::Input(new_title) = self.view.get_user_input("Edit Item: ", &reader)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
@@ -113,7 +106,6 @@ impl Window {
             Key::Char(' ') => {
                 // Toggle
                 if cur_list.len() > 0 {
-                    let cur_item = &mut cur_list[*self.state.last_cur()?];
                     cur_item.ticked_off = !cur_item.ticked_off;
                     self.state.changes = true;
                 }
@@ -229,13 +221,14 @@ impl Window {
             },
             Key::Char('H') => {
                 if cur_list.len() > 0 {
-                    let last = self.state.last_cur()?;
+                    let mut last = self.state.last_cur()?;
                     if self.state.cur_depth() > 1 && *self.state.cur(self.state.cur_depth() - 2)? > 0 {
-                        let cur_item = cur_list.remove(*last);
+                        let item = cur_list.remove(*last);
                         self.state.pop_cur()?;
                         let new_list = &mut self.state.cur_parent_list();
+                        last = self.state.last_cur()?;
                         *last += 1;
-                        new_list.insert(*last, cur_item);
+                        new_list.insert(*last, item);
                     }
                     self.dirty_window = true;
                 }
@@ -245,11 +238,11 @@ impl Window {
                 if cur_list.len() > 0 {
                     let last = self.state.last_cur()?;
                     if *last > 0 {
-                        let cur_item = cur_list.remove(*last);
+                        let item = cur_list.remove(*last);
                         let new_list = &mut cur_list[*last - 1].contents;
                         *last -= 1;
                         let len = new_list.len();
-                        new_list.insert(*self.state.push_cur(len), cur_item);
+                        new_list.insert(*self.state.push_cur(len), item);
                     }
                     self.dirty_window = true;
                 }
