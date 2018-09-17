@@ -1,24 +1,5 @@
 use std::ops::Rem;
-use std::fs::{remove_file, canonicalize};
-use std::path::{PathBuf};
-use std::io::{Write, stdin, stdout, Read};
-use std::collections::HashMap;
-
-use dialoguer;
-use linefeed::{Interface, ReadResult};
-use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
-use termion::{color, style};
-use termion::input::{TermRead};
-use glob::glob;
-use linefeed::complete::{PathCompleter, DummyCompleter};
-use termion::raw::{IntoRawMode};
-use std::sync::Arc;
-
-use todo_list;
-use errors::*;
-use select_helper;
-use util;
+use termion::event::{MouseButton, MouseEvent};
 use window::*;
 
 impl Window {

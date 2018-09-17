@@ -1,7 +1,7 @@
 name = "todo"
 
 [[contents]]
-ticked_off = true
+ticked_off = false
 title = "Support multiline items (for small screens)"
 contents = []
 

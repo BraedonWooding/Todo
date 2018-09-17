@@ -1,7 +1,7 @@
 #![recursion_limit = "1024"] // for error_chain
+#![allow(dead_code)]
 
 extern crate clap;
-extern crate console;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
@@ -13,11 +13,10 @@ extern crate glob;
 #[macro_use]
 extern crate error_chain;
 extern crate termion;
-extern crate linefeed;
 
-use std::fs::{read_to_string, File, DirBuilder, canonicalize};
+
+use std::fs::{DirBuilder, canonicalize};
 use std::path::{PathBuf};
-use std::io::{stdin, stdout};
 use std::io::Write;
 
 mod todo_list;

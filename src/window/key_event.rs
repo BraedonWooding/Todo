@@ -1,31 +1,16 @@
-use std::ops::Rem;
-use std::fs::{remove_file, canonicalize};
-use std::path::{PathBuf};
-use std::io::{Write, stdin, stdout, Read};
-use std::collections::HashMap;
+use std::fs::{remove_file};
 
 use dialoguer;
-use linefeed::{Interface, ReadResult};
-use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
-use termion::{color, style};
+use termion::event::{Key};
 use termion::input::{TermRead};
-use glob::glob;
-use linefeed::complete::{PathCompleter, DummyCompleter};
-use termion::raw::{IntoRawMode};
-use std::sync::Arc;
 
 use todo_list;
-use errors::*;
-use select_helper;
-use util;
 use window::*;
 
 impl Window {
     pub fn handle_key_event(&mut self, event: Key) -> Result<bool> {
         let cur_list = self.state.cur_parent_list();
         let cur_item = self.state.cur_item()?;
-        let reader = Interface::new("todo")?;
         match event {
             Key::Down | Key::Char('j') => {
                 self.state.move_cur_down(1)?;
@@ -48,7 +33,7 @@ impl Window {
                 }
             },
             Key::Char('\t') => {
-                if let ReadResult::Input(new_title) = self.view.get_user_input("New Item: ", &reader)? {
+                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     let i = cur_item.contents.len();
                     cur_item.contents.insert(i, new_item);
@@ -60,7 +45,7 @@ impl Window {
             Key::Char('E') => {
                 // edit from beginning
                 if cur_list.len() > 0 {
-                    if let ReadResult::Input(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, Some(0), &reader)? {
+                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, Some(0), false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -69,7 +54,7 @@ impl Window {
             Key::Char('e') => {
                 // edit from end
                 if cur_list.len() > 0 {
-                    if let ReadResult::Input(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, None, &reader)? {
+                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, None, false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -78,7 +63,7 @@ impl Window {
             Key::Char('w') => {
                 // wipe line and edit
                 if cur_list.len() > 0 {
-                    if let ReadResult::Input(new_title) = self.view.get_user_input("Edit Item: ", &reader)? {
+                    if let Some(new_title) = self.view.get_user_input("Edit Item: ", false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -93,7 +78,7 @@ impl Window {
             },
             Key::Char('i') => {
                 // new item
-                if let ReadResult::Input(new_title) = self.view.get_user_input("New Item: ", &reader)? {
+                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     cur_list.insert(*self.state.last_cur()?, new_item);
                     self.state.changes = true;
@@ -102,7 +87,7 @@ impl Window {
             },
             Key::Char('a') => {
                 // append new item
-                if let ReadResult::Input(new_title) = self.view.get_user_input("New Item: ", &reader)? {
+                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     {let last = self.state.last_cur()?;
                     *last = if *last + 1 <= cur_list.len() {*last + 1} else {*last};
@@ -138,7 +123,7 @@ impl Window {
                 self.state.history = None;
             },
             Key::Char('g') => {
-                if let ReadResult::Input(mut goto_loc) = self.view.get_user_input("Goto # (1-indexed): ", &reader)? {
+                if let Some(mut goto_loc) = self.view.get_user_input("Goto # (1-indexed): ", false)? {
                     // try to parse int
                     let last = self.state.last_cur()?;
                     if let Some(id) = goto_loc.find('-') {
@@ -247,7 +232,7 @@ impl Window {
                 self.state.destructive_changes = false;
             },
             Key::Ctrl('S') => {
-                if let ReadResult::Input(new_path) = self.view.get_user_input("Path to save to: ", &reader)? {
+                if let Some(new_path) = self.view.get_user_input("Path to save to: ", false)? {
                     self.state.cur_loaded_list().path = new_path;
                     self.state.save_list()?;
                     self.state.changes = false;
@@ -276,7 +261,7 @@ impl Window {
             Key::Ctrl('p') => {
                 {
                 let mut list = self.state.cur_loaded_list();
-                if let ReadResult::Input(new_title) = self.view.get_user_input_buf("Edit Title: ", &list.name, None, &reader)? {
+                if let Some(new_title) = self.view.get_user_input_buf("Edit Title: ", &list.name, None, false)? {
                     list.name = new_title;
                 }
                 }

@@ -1,18 +1,10 @@
-use std::ops::Rem;
-use std::fs::{remove_file, canonicalize};
+use std::fs::{canonicalize};
 use std::path::{PathBuf};
-use std::io::{Write, stdin, stdout, Read};
+use std::io::{Write, stdin};
 
-use dialoguer;
-use linefeed::{Interface, ReadResult};
 use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
-use termion::{color, style};
-use termion::input::{TermRead};
+use termion::{style};
 use glob::glob;
-use linefeed::complete::{PathCompleter, DummyCompleter};
-use termion::raw::{IntoRawMode};
-use std::sync::Arc;
 
 use todo_list;
 use errors::*;
@@ -22,9 +14,8 @@ use select_helper;
 use util;
 
 pub fn create_new_list(view: &mut WindowView) -> Result<Option<todo_list::TodoList>> {
-    let reader = Interface::new("create new list")?;
-    if let ReadResult::Input(list_name) = view.get_user_input("New List Name: ", &reader)? {
-        let mut stdin = stdin();
+    let mut stdin = stdin();
+    if let Some(list_name) = view.get_user_input("New List Name: ", false)? {
         let mut view = WindowView::new()?;
         let list_prompt = format!("Where to place the {underline}list{reset}? ({bold}q{reset}/{bold}esc{reset} to exit)",
                                    bold = style::Bold, reset = style::Reset,
@@ -41,8 +32,7 @@ pub fn create_new_list(view: &mut WindowView) -> Result<Option<todo_list::TodoLi
             0 => PathBuf::from("./"),
             1 => util::get_file_path()?,
             2 => {
-                reader.set_completer(Arc::new(PathCompleter));
-                if let ReadResult::Input(dir) = view.get_user_input("Enter directory: ", &reader)? {
+                if let Some(dir) = view.get_user_input("Enter directory: ", true)? {
                     PathBuf::from(dir)
                 } else {
                     view.set_cursor(true)?;
@@ -103,9 +93,7 @@ pub fn change_list() -> Result<Option<todo_list::TodoList>> {
         }
     } else if choice.unwrap() == possibilities.len() - 1 {
         write!(view, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1))?;
-        let reader = Interface::new("new directory")?;
-        reader.set_completer(Arc::new(PathCompleter));
-        if let ReadResult::Input(directory) = view.get_user_input_buf("Enter Directory: ", ::std::env::current_dir()?.to_str().unwrap(), None, &reader)? {
+        if let Some(directory) = view.get_user_input_buf("Enter Directory: ", ::std::env::current_dir()?.to_str().unwrap(), None, true)? {
             list = WindowState::load_list(&directory.trim().to_string())?;
         } else {
             bail!("Invalid Directory")

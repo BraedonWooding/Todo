@@ -1,24 +1,12 @@
-use std::ops::Rem;
-use std::fs::{remove_file, canonicalize};
-use std::path::{PathBuf};
-use std::io::{Write, stdin, stdout, Read};
-use std::collections::HashMap;
+use std::io::{Write, stdin};
 
-use dialoguer;
-use linefeed::{Interface, ReadResult};
-use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
+use termion::event::{Key, Event};
 use termion::{color, style};
 use termion::input::{TermRead};
-use glob::glob;
-use linefeed::complete::{PathCompleter, DummyCompleter};
-use termion::raw::{IntoRawMode};
-use std::sync::Arc;
 
 use todo_list;
 use errors::*;
-use select_helper;
-use util;
+use dialoguer;
 
 pub mod window_view;
 pub mod window_state;
@@ -56,12 +44,11 @@ impl Window {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        let stdin = stdin();
-        let mut amount = self.view.size.1 as usize - 3;
+        let mut amount = self.view.size.1 as usize - 4;
         let mut offset = 0;
         self.view.print_out_list(&mut self.state, 0, amount)?;
 
-        for c in stdin.events() {
+        for c in stdin().events() {
             self.view.calc_size()?;
             let mut report_err;
 
@@ -78,7 +65,7 @@ impl Window {
                 _ => report_err = true,
             }
 
-            amount = self.view.size.1 as usize - 3;
+            amount = self.view.size.1 as usize - 4;
             if self.dirty_window {
                 offset = 0;
                 let mut full_offset = 0;

@@ -1,6 +1,5 @@
 use std::path::{PathBuf};
 use std::env::{home_dir};
-use std::io::{Write, stdout};
 
 use errors::*;
 

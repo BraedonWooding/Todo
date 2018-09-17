@@ -1,13 +1,7 @@
-use std::io::{stdout, Write, Stdout};
+use std::io::{Write};
 use std::fs::{File, read_to_string};
 
 use toml;
-use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
-use termion::{color, clear, style};
-use termion::input::{MouseTerminal, TermRead};
-use termion::screen::AlternateScreen;
-use termion::raw::{IntoRawMode, RawTerminal};
 use std::cell::RefCell;
 
 use errors::*;

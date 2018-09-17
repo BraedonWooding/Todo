@@ -1,18 +1,16 @@
 use termion;
-use termion::event::{Key, Event, MouseButton, MouseEvent};
-use termion::{color, clear, style};
+use termion::event::{Key};
+use termion::{color, style};
 use termion::input::{MouseTerminal, TermRead};
 use termion::screen::AlternateScreen;
 use termion::raw::{IntoRawMode, RawTerminal};
-use std::io::{stdout, Write, Stdout};
-use linefeed::{Interface, ReadResult, DefaultTerminal};
-use linefeed::terminal::Signal;
+use std::io::{stdout, Write, Stdout, stdin};
 use std::io::Result as IOResult;
+use std;
 
 use window_state::WindowState;
 use errors::*;
 use todo_list;
-use window_state;
 
 pub struct WindowView {
     out: MouseTerminal<AlternateScreen<RawTerminal<Stdout>>>,
@@ -104,26 +102,126 @@ impl WindowView {
         Ok(())
     }
 
-    pub fn get_user_input(&mut self, input_msg: &str, reader: &Interface<DefaultTerminal>) -> Result<ReadResult> {
-        self.set_cursor(true)?;
-        self.flush()?;
-        let height = self.size.1;
-        write!(self, "{}\r\n", termion::cursor::Goto(1, height - 2))?;
-        reader.set_prompt(input_msg)?;
-        reader.set_report_signal(Signal::Break, true);
-        reader.set_report_signal(Signal::Interrupt, true);
-        let result = reader.read_line().chain_err(|| "Reader Error");
-        self.set_cursor(false)?;
-        self.flush()?;
-        result
+    fn forward_word(pos: &mut usize, text: &String) {
+        for ch in text.chars().skip(*pos + 1) {
+            if ch == ' ' { break; }
+            *pos += 1;
+        }
     }
 
-    pub fn get_user_input_buf(&mut self, input_msg: &str, buf: &str, pos: Option<usize>, reader: &Interface<DefaultTerminal>) -> Result<ReadResult> {
-        reader.set_buffer(buf)?;
-        if let Some(i) = pos {
-            reader.set_cursor(i)?;
+    fn backward_word(pos: &mut usize, text: &String) {
+        for ch in text.chars().take(*pos) {
+            if ch == ' ' { break; }
+            *pos -= 1;
         }
-        self.get_user_input(input_msg, reader)
+    }
+
+    fn split_path(path: &str) -> (Option<&str>, &str) {
+        match path.rfind(std::path::is_separator) {
+            Some(pos) => (Some(&path[..pos]), &path[pos + 1..]),
+            None => (None, path)
+        }
+    }
+
+    fn get_path_completion(buffer: &str) -> Vec<(String, String)> {
+        let (base_dir, file) = Self::split_path(&buffer);
+        let mut res = Vec::new();
+        let lookup_dir = base_dir.unwrap_or(".");
+        if let Ok(list) = std::fs::read_dir(lookup_dir) {
+            for entry in list {
+                if let Ok(entry) = entry {
+                    let name = entry.file_name();
+                    if let Ok(path) = name.into_string() {
+                        if path.starts_with(file) {
+                            let (name, display) = if let Some(dir) = base_dir {
+                                (format!("{}{}{}", dir, std::path::MAIN_SEPARATOR, path),
+                                    Some(path))
+                            } else {
+                                (path, None)
+                            };
+
+                            let is_dir = entry.metadata().ok()
+                                            .map_or(false, |k| k.is_dir());
+                            let suffix: String = (if is_dir {std::path::MAIN_SEPARATOR} else {' '}).to_string();
+                            if let Some(display) = display {
+                                res.push((name, suffix + &display));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        res
+    }
+
+    pub fn get_user_input_buf(&mut self, prompt: &str, buf: &str, pos: Option<usize>, use_path: bool) -> Result<Option<String>> {
+        self.set_cursor(true)?;
+        self.flush()?;
+        let mut buffer = String::new();
+        buffer += buf;
+        let mut old_buffer = String::new();
+        let mut cur_pos = pos.unwrap_or(buf.len() - 1);
+        let mut current_choices = vec![];
+        let mut current_index = 0usize;
+        let mut buffer_changed = true;
+
+        write!(self, "{}: {}", prompt, buffer)?;
+        self.flush()?;
+        for c in stdin().keys() {
+            match c {
+                Ok(Key::Ctrl('c')) | Ok(Key::Ctrl('q')) => return Ok(None),
+                Ok(Key::Char('\n')) => break,
+                Ok(Key::Backspace) => {
+                    if cur_pos <= buffer.len() - 1 {
+                        buffer.remove(cur_pos);
+                        if cur_pos == buffer.len() { cur_pos -= 1; }
+                        buffer_changed = true;
+                    }
+                },
+                Ok(Key::Left) => cur_pos -= 1,
+                Ok(Key::Right) => cur_pos += 1,
+                Ok(Key::Up) => Self::backward_word(&mut cur_pos, &buffer),
+                Ok(Key::Down) => Self::forward_word(&mut cur_pos, &buffer),
+                Ok(Key::Char('\t')) if use_path => {
+                    if buffer_changed {
+                        current_choices = Self::get_path_completion(&buffer);
+                        current_index = 0;
+                        old_buffer = buffer.clone();
+                        buffer = current_choices[current_index].1.to_owned();
+                    } else {
+                        if current_index == !0 || current_index >= current_choices.len() - 1 {
+                            current_index = 0;
+                        } else {
+                            current_index += 1;
+                        }
+                        buffer = current_choices[current_index].1.to_owned();
+                    }
+                },
+                Ok(Key::Char(c)) => {
+                    buffer.push(c);
+                    cur_pos += 1;
+                    buffer_changed = true;
+                },
+                Ok(Key::Esc) => {
+                    if !buffer_changed {
+                        buffer = old_buffer.clone();
+                        buffer_changed = true;
+                    }
+                },
+                _ => {},
+            }
+            write!(self, "{}{}{}: {}", termion::clear::CurrentLine, termion::cursor::Left(!0), prompt, buffer)?;
+            self.flush()?;
+        }
+
+        self.set_cursor(false)?;
+        self.flush()?;
+
+        Ok(Some(buffer))
+    }
+
+    pub fn get_user_input(&mut self, prompt: &str, use_path: bool) -> Result<Option<String>> {
+        self.get_user_input_buf(prompt, "", None, use_path)
     }
 
     pub fn clear(&mut self) -> Result<()> {
