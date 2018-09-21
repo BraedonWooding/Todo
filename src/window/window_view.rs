@@ -157,67 +157,70 @@ impl WindowView {
     pub fn get_user_input_buf(&mut self, prompt: &str, buf: &str, pos: Option<usize>, use_path: bool) -> Result<Option<String>> {
         self.set_cursor(true)?;
         self.flush()?;
-        let mut buffer = String::new();
-        buffer += buf;
+        let mut buf = buf.to_owned();
         let mut old_buffer = String::new();
-        let mut cur_pos = pos.unwrap_or(buf.len() - 1);
+        let mut cur_pos = pos.unwrap_or(buf.len());
         let mut current_choices = vec![];
         let mut current_index = 0usize;
         let mut buffer_changed = true;
 
-        write!(self, "{}: {}", prompt, buffer)?;
+        write!(self, "{}: {}", prompt, buf)?;
         self.flush()?;
         for c in stdin().keys() {
             match c {
                 Ok(Key::Ctrl('c')) | Ok(Key::Ctrl('q')) => return Ok(None),
                 Ok(Key::Char('\n')) => break,
                 Ok(Key::Backspace) => {
-                    if cur_pos <= buffer.len() - 1 {
-                        buffer.remove(cur_pos);
-                        if cur_pos == buffer.len() { cur_pos -= 1; }
+                    if buf.len() > 0 && cur_pos > 0 {
+                        buf.remove(cur_pos - 1);
+                        cur_pos -= 1;
                         buffer_changed = true;
                     }
                 },
-                Ok(Key::Left) => cur_pos -= 1,
-                Ok(Key::Right) => cur_pos += 1,
-                Ok(Key::Up) => Self::backward_word(&mut cur_pos, &buffer),
-                Ok(Key::Down) => Self::forward_word(&mut cur_pos, &buffer),
+                Ok(Key::Left) if cur_pos > 0 => cur_pos -= 1,
+                Ok(Key::Right) if cur_pos < buf.len() => cur_pos += 1,
+                Ok(Key::Up) => Self::backward_word(&mut cur_pos, &buf),
+                Ok(Key::Down) => Self::forward_word(&mut cur_pos, &buf),
                 Ok(Key::Char('\t')) if use_path => {
                     if buffer_changed {
-                        current_choices = Self::get_path_completion(&buffer);
+                        current_choices = Self::get_path_completion(&buf);
                         current_index = 0;
-                        old_buffer = buffer.clone();
-                        buffer = current_choices[current_index].1.to_owned();
+                        old_buffer = buf.clone();
+                        buf = current_choices[current_index].1.to_owned();
                     } else {
                         if current_index == !0 || current_index >= current_choices.len() - 1 {
                             current_index = 0;
                         } else {
                             current_index += 1;
                         }
-                        buffer = current_choices[current_index].1.to_owned();
+                        buf = current_choices[current_index].1.to_owned();
                     }
                 },
                 Ok(Key::Char(c)) => {
-                    buffer.push(c);
+                    buf.push(c);
                     cur_pos += 1;
                     buffer_changed = true;
                 },
                 Ok(Key::Esc) => {
                     if !buffer_changed {
-                        buffer = old_buffer.clone();
+                        buf = old_buffer.clone();
                         buffer_changed = true;
                     }
                 },
                 _ => {},
             }
-            write!(self, "{}{}{}: {}", termion::clear::CurrentLine, termion::cursor::Left(!0), prompt, buffer)?;
+            write!(self, "{}{}{}: {}", termion::clear::CurrentLine, 
+                termion::cursor::Left(!0), prompt, buf)?;
+            if buf.len() > cur_pos {
+                write!(self, "{}", termion::cursor::Left(buf.len() as u16 - cur_pos as u16))?;
+            }
             self.flush()?;
         }
 
         self.set_cursor(false)?;
         self.flush()?;
 
-        Ok(Some(buffer))
+        Ok(Some(buf))
     }
 
     pub fn get_user_input(&mut self, prompt: &str, use_path: bool) -> Result<Option<String>> {

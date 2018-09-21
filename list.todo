@@ -21,7 +21,7 @@ title = "Make it more colourful"
 contents = []
 
 [[contents]]
-ticked_off = false
+ticked_off = true
 title = "Remove any needless dependencies"
 contents = []
 
