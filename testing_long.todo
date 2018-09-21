@@ -64,7 +64,7 @@ title = "If the thing can't save, then make sure the user has correct directory"
 contents = []
 
 [[contents]]
-ticked_off = false
+ticked_off = true
 title = "Move the new item to the bottom as a 'bottom buffer' (vim style)"
 contents = []
 

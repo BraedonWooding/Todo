@@ -47,22 +47,25 @@ impl Window {
         let mut amount = self.view.size.1 as usize - 4;
         let mut offset = 0;
         self.view.print_out_list(&mut self.state, 0, amount)?;
+        let mut events = stdin().events();
 
-        for c in stdin().events() {
+        loop {
+            let c = events.next();
             self.view.calc_size()?;
-            let mut report_err;
+            let mut report_err = false;
 
             match c {
-                Ok(Event::Mouse(mouse_event)) => report_err = self.handle_mouse_event(mouse_event)?,
-                Ok(Event::Key(Key::Ctrl('q'))) | Ok(Event::Key(Key::Esc)) => {
+                Some(Ok(Event::Mouse(mouse_event))) => report_err = self.handle_mouse_event(mouse_event)?,
+                Some(Ok(Event::Key(Key::Ctrl('q')))) | Some(Ok(Event::Key(Key::Esc))) => {
                     if self.state.changes && dialoguer::Confirmation::new("Save current to disk?").interact()? {
                         self.state.save_list()?;
                     }
                     self.view.clear()?;
                     break;
                 },
-                Ok(Event::Key(key)) => report_err = self.handle_key_event(key)?,
-                _ => report_err = true,
+                Some(Ok(Event::Key(key))) => report_err = self.handle_key_event(key)?,
+                Some(_) => report_err = true,
+                _ => {},
             }
 
             amount = self.view.size.1 as usize - 4;
@@ -76,7 +79,7 @@ impl Window {
                 while index > relative {
                     // refactor
                     let sum = Self::calc_item_length(&list[index - relative]);
-                    if amount >= sum && full_offset < amount / 2 - sum - 2 {
+                    if amount >= sum && full_offset < amount - sum - 1 {
                         full_offset += sum;
                     } else {
                         break;
