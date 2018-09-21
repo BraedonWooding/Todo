@@ -33,7 +33,7 @@ impl Window {
                 }
             },
             Key::Char('\t') => {
-                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
+                if let Some(new_title) = self.view.get_user_input("New Item", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     let i = cur_item.contents.len();
                     cur_item.contents.insert(i, new_item);
@@ -45,7 +45,7 @@ impl Window {
             Key::Char('E') => {
                 // edit from beginning
                 if cur_list.len() > 0 {
-                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, Some(0), false)? {
+                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item", &cur_item.title, Some(0), false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -54,7 +54,7 @@ impl Window {
             Key::Char('e') => {
                 // edit from end
                 if cur_list.len() > 0 {
-                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item: ", &cur_item.title, None, false)? {
+                    if let Some(new_title) = self.view.get_user_input_buf("Edit Item", &cur_item.title, None, false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -63,7 +63,7 @@ impl Window {
             Key::Char('w') => {
                 // wipe line and edit
                 if cur_list.len() > 0 {
-                    if let Some(new_title) = self.view.get_user_input("Edit Item: ", false)? {
+                    if let Some(new_title) = self.view.get_user_input("Edit Item", false)? {
                         cur_item.title = new_title;
                         self.state.changes = true;
                     }
@@ -78,7 +78,7 @@ impl Window {
             },
             Key::Char('i') => {
                 // new item
-                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
+                if let Some(new_title) = self.view.get_user_input("New Item", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     cur_list.insert(*self.state.last_cur()?, new_item);
                     self.state.changes = true;
@@ -87,7 +87,7 @@ impl Window {
             },
             Key::Char('a') => {
                 // append new item
-                if let Some(new_title) = self.view.get_user_input("New Item: ", false)? {
+                if let Some(new_title) = self.view.get_user_input("New Item", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     {let last = self.state.last_cur()?;
                     *last = if *last + 1 <= cur_list.len() {*last + 1} else {*last};
@@ -261,7 +261,7 @@ impl Window {
             Key::Ctrl('p') => {
                 {
                 let mut list = self.state.cur_loaded_list();
-                if let Some(new_title) = self.view.get_user_input_buf("Edit Title: ", &list.name, None, false)? {
+                if let Some(new_title) = self.view.get_user_input_buf("Edit Title", &list.name, None, false)? {
                     list.name = new_title;
                 }
                 }
