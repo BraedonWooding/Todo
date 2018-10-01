@@ -10,7 +10,6 @@ use window::*;
 impl Window {
     pub fn handle_key_event(&mut self, event: Key) -> Result<bool> {
         let cur_list = self.state.cur_parent_list();
-        let cur_item = self.state.cur_item()?;
         match event {
             Key::Down | Key::Char('j') => {
                 self.state.move_cur_down(1)?;
@@ -26,13 +25,15 @@ impl Window {
                     self.dirty_window = true;
                 }
             },
-            Key::Right | Key::Char('l') => {
+            Key::Right | Key::Char('l') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 if cur_item.contents.len() > 0 {
                     self.state.push_cur(0);
                     self.dirty_window = true;
                 }
             },
-            Key::Char('\t') => {
+            Key::Char('\t') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 if let Some(new_title) = self.view.get_user_input("New Item", false)? {
                     let new_item = todo_list::TodoItem::create(new_title);
                     let i = cur_item.contents.len();
@@ -42,7 +43,8 @@ impl Window {
                     self.dirty_window = true;
                 }
             },
-            Key::Char('E') => {
+            Key::Char('E') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 // edit from beginning
                 if cur_list.len() > 0 {
                     if let Some(new_title) = self.view.get_user_input_buf("Edit Item", &cur_item.title, Some(0), false)? {
@@ -51,7 +53,8 @@ impl Window {
                     }
                 }
             }
-            Key::Char('e') => {
+            Key::Char('e') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 // edit from end
                 if cur_list.len() > 0 {
                     if let Some(new_title) = self.view.get_user_input_buf("Edit Item", &cur_item.title, None, false)? {
@@ -60,7 +63,8 @@ impl Window {
                     }
                 }
             },
-            Key::Char('w') => {
+            Key::Char('w') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 // wipe line and edit
                 if cur_list.len() > 0 {
                     if let Some(new_title) = self.view.get_user_input("Edit Item", false)? {
@@ -69,7 +73,8 @@ impl Window {
                     }
                 }
             },
-            Key::Char(' ') => {
+            Key::Char(' ') if cur_list.len() > 0 => {
+                let cur_item = self.state.cur_item()?;
                 // Toggle
                 if cur_list.len() > 0 {
                     cur_item.ticked_off = !cur_item.ticked_off;

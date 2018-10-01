@@ -57,18 +57,22 @@ pub fn create_new_list(view: &mut WindowView) -> Result<Option<todo_list::TodoLi
 pub fn change_list() -> Result<Option<todo_list::TodoList>> {
     // Find all the lists and prompt user for which one
     let list;
+    let mut actual = vec![];
     let mut possibilities = vec![];
     let mut stdin = stdin();
     let mut view = WindowView::new()?;
     for entry in glob(&(util::get_file_path()?.to_str().unwrap().to_string() + "/*.todo")).chain_err(|| "Can't change list")? {
         let entry = entry?;
         if entry.extension().unwrap() == "todo" {
+            actual.push(entry.clone());
+            write!(::std::io::stderr(), "{:?}\n", entry.file_name())?;
             possibilities.push("~/_todo_lists/".to_owned() + &entry.file_stem().unwrap().to_str().unwrap().to_string());
         }
     }
     for entry in glob("./*.todo").chain_err(|| "Can't change list")? {
         let entry = entry?;
         if entry.extension().unwrap() == "todo" {
+            actual.push(entry.clone());
             possibilities.push("./".to_owned() + &entry.file_stem().unwrap().to_str().unwrap().to_string());
         }
     }
@@ -94,13 +98,12 @@ pub fn change_list() -> Result<Option<todo_list::TodoList>> {
     } else if choice.unwrap() == possibilities.len() - 1 {
         write!(view, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1))?;
         if let Some(directory) = view.get_user_input_buf("Enter Directory: ", ::std::env::current_dir()?.to_str().unwrap(), None, true)? {
-            list = WindowState::load_list(&directory.trim().to_string())?;
+            list = WindowState::load_list(&PathBuf::from(directory.trim().to_string()))?;
         } else {
             bail!("Invalid Directory")
         }
     } else {
-        let full_path = possibilities[choice.unwrap()].clone() + ".todo";
-        list = WindowState::load_list(&full_path)?;
+        list = WindowState::load_list(&actual[choice.unwrap()])?;
     }
     Ok(Some(list))
 }
