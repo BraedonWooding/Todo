@@ -5,6 +5,7 @@ use window::*;
 impl Window {
     pub fn handle_mouse_event(&mut self, event: MouseEvent) -> Result<bool> {
         let cur_list = self.state.cur_parent_list();
+        if cur_list.len() == 0 {return Ok(false);}
         match event {
             MouseEvent::Press(MouseButton::WheelDown, _, _) => {
                 // Better explanation

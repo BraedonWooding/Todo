@@ -1,5 +1,6 @@
 use std::io::{Write};
 use std::fs::{File, read_to_string};
+use std::path::PathBuf;
 
 use toml;
 use std::cell::RefCell;
@@ -35,12 +36,12 @@ impl WindowState {
     }
 
     pub fn new_from_list(path: &String) -> Result<Self> {
-        Ok(Self::new(Self::load_list(path)?))
+        Ok(Self::new(Self::load_list(&PathBuf::from(path))?))
     }
 
-    pub fn load_list(path: &String) -> Result<todo_list::TodoList> {
+    pub fn load_list(path: &PathBuf) -> Result<todo_list::TodoList> {
         let mut list : todo_list::TodoList = toml::from_str(&read_to_string(path)?).chain_err(|| "Failed to load list")?;
-        list.path = path.to_owned();
+        list.path = path.to_string_lossy().to_owned().to_string();
         Ok(list)
     }
 
@@ -64,7 +65,7 @@ impl WindowState {
 
     pub fn reload_list(&self) -> Result<()> {
         let list = self.cur_loaded_list();
-        list.contents = Self::load_list(&list.path)?.contents;
+        list.contents = Self::load_list(&PathBuf::from(&list.path))?.contents;
         Ok(())
     }
 

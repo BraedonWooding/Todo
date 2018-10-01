@@ -164,7 +164,8 @@ impl WindowView {
         let mut current_index = 0usize;
         let mut buffer_changed = true;
 
-        write!(self, "{}: {}", prompt, buf)?;
+        let height = self.size.1 - 1;
+        write!(self, "{}{}: {}", termion::cursor::Goto(1, height), prompt, buf)?;
         self.flush()?;
         for c in stdin().keys() {
             match c {
